@@ -1,0 +1,19 @@
+# Set variables
+$repoUrl = "https://bitbucket.org/username/repository_name/src/master/folder_path"
+$username = "your_username"
+$password = "your_password"
+$outputFolder = "C:\DestinationFolder"
+
+# Base64 encode the username and password for authentication
+$base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $username, $password)))
+
+# Get folder contents from Bitbucket API
+$response = Invoke-RestMethod -Uri $repoUrl -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)}
+
+# Loop through the files in the response and download each one
+foreach ($file in $response.values) {
+    $fileUrl = $file.links.self.href
+    $fileName = $file.path.Substring($file.path.LastIndexOf("/") + 1)
+    $outputFilePath = Join-Path -Path $outputFolder -ChildPath $fileName
+    Invoke-WebRequest -Uri $fileUrl -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)} -OutFile $outputFilePath
+}
